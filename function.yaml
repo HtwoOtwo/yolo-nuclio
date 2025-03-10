@@ -1,0 +1,46 @@
+metadata:
+  name: custom-model-yolo
+  annotations:
+    name: custom-model-yolo
+    type: detector
+    framework: pytorch
+
+spec:
+  description: custom-model-yolo
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: custom-model-yolo
+    baseImage: yolo:latest
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+        - kind: ARG
+          value: CACHEBUST=1
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
